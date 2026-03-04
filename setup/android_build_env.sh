@@ -75,4 +75,19 @@ echo "Installing repo"
 sudo curl --create-dirs -L -o /usr/local/bin/repo -O -L https://storage.googleapis.com/git-repo-downloads/repo
 sudo chmod a+rx /usr/local/bin/repo
 
+echo "Installing legacy ncurses libraries (libtinfo5, libncurses5, libncurses6)..."
+
+# Install libncurses6 from apt
+sudo apt install -y libncurses6
+
+# Download and install libtinfo5 and libncurses5 (not available in Ubuntu 24.04 repos)
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2_amd64.deb
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2_amd64.deb
+
+sudo dpkg -i libtinfo5_6.3-2_amd64.deb libncurses5_6.3-2_amd64.deb
+
+# Clean up
+rm -f libtinfo5_6.3-2_amd64.deb libncurses5_6.3-2_amd64.deb
+
+echo "Legacy ncurses libraries installed successfully!"
 echo "Setup complete for Ubuntu 24.04!"
