@@ -5,7 +5,7 @@
 # Script to setup an AOSP Build environment on Ubuntu 24.04
 LATEST_MAKE_VERSION="4.3"
 UBUNTU_20_PACKAGES="libncurses5 curl python-is-python3"
-UBUNTU_24_PACKAGES="python3-is-python3 python3-pyelftools curl"
+UBUNTU_24_PACKAGES="python-is-python3 python3-pyelftools curl"
 DEBIAN_10_PACKAGES="libncurses5"
 DEBIAN_11_PACKAGES="libncurses5"
 PACKAGES=""
