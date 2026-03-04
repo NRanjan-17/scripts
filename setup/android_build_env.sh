@@ -63,6 +63,15 @@ run "Install build dependencies" sudo DEBIAN_FRONTEND=noninteractive \
     libelf-dev \
     ${PACKAGES} -y
 
+# Initialize git-lfs
+echo -e "\n>>> Initializing Git LFS"
+if git lfs install; then
+    echo "OK: Git LFS initialized"
+else
+    ERRORS+=("FAILED: Git LFS initialization")
+    echo "ERROR: Git LFS initialization failed!"
+fi
+
 # GitHub CLI
 echo -e "\n>>> Installing GitHub CLI"
 if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
