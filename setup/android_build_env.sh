@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-
 # Copyright (C) 2018 Harsh 'MSF Jarvis' Shandilya
 # Copyright (C) 2018 Akhil Narang
 # SPDX-License-Identifier: GPL-3.0-only
-
-# Script to setup an AOSP Build environment on Ubuntu and Linux Mint
-
+# Script to setup an AOSP Build environment on Ubuntu 24.04
 LATEST_MAKE_VERSION="4.3"
-UBUNTU_16_PACKAGES="libesd0-dev"
 UBUNTU_20_PACKAGES="libncurses5 curl python-is-python3"
+UBUNTU_24_PACKAGES="python3-is-python3 python3-pyelftools curl"
 DEBIAN_10_PACKAGES="libncurses5"
 DEBIAN_11_PACKAGES="libncurses5"
 PACKAGES=""
@@ -16,13 +13,12 @@ PACKAGES=""
 sudo apt install software-properties-common -y
 sudo apt update
 
-# Install lsb-core packages
-sudo apt install lsb-core -y
-
+# lsb-core removed in Ubuntu 24.04, use lsb-release instead
+sudo apt install lsb-release -y
 LSB_RELEASE="$(lsb_release -d | cut -d ':' -f 2 | sed -e 's/^[[:space:]]*//')"
 
-if [[ ${LSB_RELEASE} =~ "Mint 18" || ${LSB_RELEASE} =~ "Ubuntu 16" ]]; then
-    PACKAGES="${UBUNTU_16_PACKAGES}"
+if [[ ${LSB_RELEASE} =~ "Ubuntu 24" ]]; then
+    PACKAGES="${UBUNTU_24_PACKAGES}"
 elif [[ ${LSB_RELEASE} =~ "Ubuntu 20" || ${LSB_RELEASE} =~ "Ubuntu 21" || ${LSB_RELEASE} =~ "Ubuntu 22" || ${LSB_RELEASE} =~ 'Pop!_OS 2' ]]; then
     PACKAGES="${UBUNTU_20_PACKAGES}"
 elif [[ ${LSB_RELEASE} =~ "Debian GNU/Linux 10" ]]; then
@@ -36,13 +32,15 @@ sudo DEBIAN_FRONTEND=noninteractive \
     adb autoconf automake axel bc bison build-essential \
     ccache clang cmake curl expat fastboot flex g++ \
     g++-multilib gawk gcc gcc-multilib git git-lfs gnupg gperf \
-    htop imagemagick lib32ncurses5-dev lib32z1-dev libtinfo5 libc6-dev libcap-dev \
-    libexpat1-dev libgmp-dev '^liblz4-.*' '^liblzma.*' libmpc-dev libmpfr-dev libncurses5-dev \
+    htop imagemagick lib32ncurses-dev lib32z1-dev libc6-dev libcap-dev \
+    libexpat1-dev libgmp-dev '^liblz4-.*' '^liblzma.*' libmpc-dev libmpfr-dev libncurses-dev \
     libsdl1.2-dev libssl-dev libtool libxml2 libxml2-utils '^lzma.*' lzop \
-    maven ncftp ncurses-dev patch patchelf pkg-config pngcrush \
-    pngquant python2.7 python3-pyelftools python-all-dev re2c schedtool squashfs-tools subversion \
-    texinfo unzip w3m xsltproc zip zlib1g-dev lzip \
+    maven ncftp patch patchelf pkg-config pngcrush \
+    pngquant python3 python3-pyelftools re2c schedtool squashfs-tools subversion \
+    texinfo unzip xsltproc zip zlib1g-dev lzip \
     libxml-simple-perl libswitch-perl apt-utils rsync \
+    openjdk-21-jdk \
+    libelf-dev \
     ${PACKAGES} -y
 
 echo -e "Installing GitHub CLI"
@@ -56,7 +54,14 @@ echo -e "Setting up udev rules for adb!"
 sudo curl --create-dirs -L -o /etc/udev/rules.d/51-android.rules -O -L https://raw.githubusercontent.com/M0Rf30/android-udev-rules/master/51-android.rules
 sudo chmod 644 /etc/udev/rules.d/51-android.rules
 sudo chown root /etc/udev/rules.d/51-android.rules
-sudo systemctl restart udev
+
+# systemd may not be available in WSL - handle gracefully
+if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null; then
+    sudo systemctl restart udev
+else
+    echo "systemd not available, skipping udev restart (normal in WSL)"
+    sudo udevadm control --reload-rules 2>/dev/null || true
+fi
 
 if [[ "$(command -v make)" ]]; then
     makeversion="$(make -v | head -1 | awk '{print $3}')"
@@ -69,3 +74,5 @@ fi
 echo "Installing repo"
 sudo curl --create-dirs -L -o /usr/local/bin/repo -O -L https://storage.googleapis.com/git-repo-downloads/repo
 sudo chmod a+rx /usr/local/bin/repo
+
+echo "Setup complete for Ubuntu 24.04!"
