@@ -2,7 +2,7 @@
 # Copyright (C) 2018 Harsh 'MSF Jarvis' Shandilya
 # Copyright (C) 2018 Akhil Narang
 # SPDX-License-Identifier: GPL-3.0-only
-# Script to setup an AOSP Build environment on Ubuntu 24.04
+# Script to setup an AOSP Build environment on Ubuntu
 
 # Catch errors in pipes
 set -o pipefail
@@ -24,21 +24,24 @@ run() {
 
 LATEST_MAKE_VERSION="4.3"
 UBUNTU_20_PACKAGES="libncurses5 curl python-is-python3"
-UBUNTU_24_PACKAGES="python-is-python3 python3-pyelftools curl"
+UBUNTU_24_26_PACKAGES="python-is-python3 python3-pyelftools curl"
 DEBIAN_10_PACKAGES="libncurses5"
 DEBIAN_11_PACKAGES="libncurses5"
 PACKAGES=""
 
 run "Install software-properties-common" sudo apt install software-properties-common -y
+
+# Clean up broken OpenJDK PPAs that cause 404 errors on newer Ubuntu releases
+run "Clean broken PPAs" sudo rm -f /etc/apt/sources.list.d/*openjdk*.list
 run "Update apt" sudo apt update
 
-# lsb-core removed in Ubuntu 24.04, use lsb-release instead
+# lsb-core removed in Ubuntu 24.04+, use lsb-release instead
 run "Install lsb-release" sudo apt install lsb-release -y
 LSB_RELEASE="$(lsb_release -d | cut -d ':' -f 2 | sed -e 's/^[[:space:]]*//')"
 echo "Detected OS: ${LSB_RELEASE}"
 
-if [[ ${LSB_RELEASE} =~ "Ubuntu 24" ]]; then
-    PACKAGES="${UBUNTU_24_PACKAGES}"
+if [[ ${LSB_RELEASE} =~ "Ubuntu 24" || ${LSB_RELEASE} =~ "Ubuntu 26" ]]; then
+    PACKAGES="${UBUNTU_24_26_PACKAGES}"
 elif [[ ${LSB_RELEASE} =~ "Ubuntu 20" || ${LSB_RELEASE} =~ "Ubuntu 21" || ${LSB_RELEASE} =~ "Ubuntu 22" || ${LSB_RELEASE} =~ 'Pop!_OS 2' ]]; then
     PACKAGES="${UBUNTU_20_PACKAGES}"
 elif [[ ${LSB_RELEASE} =~ "Debian GNU/Linux 10" ]]; then
@@ -47,6 +50,7 @@ elif [[ ${LSB_RELEASE} =~ "Debian GNU/Linux 11" ]]; then
     PACKAGES="${DEBIAN_11_PACKAGES}"
 fi
 
+# Added libxml2-dev alongside libxml2-utils to replace the deprecated libxml2 package
 run "Install build dependencies" sudo DEBIAN_FRONTEND=noninteractive \
     apt install \
     adb autoconf automake axel bc bison build-essential \
@@ -54,7 +58,7 @@ run "Install build dependencies" sudo DEBIAN_FRONTEND=noninteractive \
     g++-multilib gawk gcc gcc-multilib git git-lfs gnupg gperf \
     htop imagemagick lib32ncurses-dev lib32z1-dev libc6-dev libcap-dev \
     libexpat1-dev libgmp-dev '^liblz4-.*' '^liblzma.*' libmpc-dev libmpfr-dev libncurses-dev \
-    libsdl1.2-dev libssl-dev libtool libxml2 libxml2-utils '^lzma.*' lzop \
+    libsdl1.2-dev libssl-dev libtool libxml2-dev libxml2-utils '^lzma.*' lzop \
     maven ncftp patch patchelf pkg-config pngcrush \
     pngquant python3 python3-pyelftools re2c schedtool squashfs-tools subversion \
     texinfo unzip xsltproc zip zlib1g-dev lzip \
@@ -145,7 +149,7 @@ rm -f libtinfo5_6.3-2_amd64.deb libncurses5_6.3-2_amd64.deb
 # Final summary
 echo -e "\n==============================="
 if [ ${#ERRORS[@]} -eq 0 ]; then
-    echo "✓ Setup complete for Ubuntu 24.04! No errors."
+    echo "✓ Setup complete! No errors."
 else
     echo "✗ Setup completed WITH ERRORS:"
     for err in "${ERRORS[@]}"; do
